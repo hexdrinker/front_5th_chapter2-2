@@ -8,18 +8,13 @@ export const useCart = () => {
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
   const addToCart = (product: Product) => {
-    const item = cart.find((item) => item.product.id === product.id);
-    if (!item) {
-      setCart((prevCart) => [...prevCart, { product, quantity: 1 }]);
-      return;
-    }
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item,
-      ),
-    );
+    setCart((prevCart) => {
+      const item = prevCart.find((item) => item.product.id === product.id);
+      if (!item) {
+        return [...prevCart, { product, quantity: 1 }];
+      }
+      return updateCartItemQuantity(prevCart, product.id, item.quantity + 1);
+    });
   };
 
   const removeFromCart = (productId: string) => {
@@ -29,19 +24,13 @@ export const useCart = () => {
   };
 
   const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity > 20) {
-      return;
-    }
-    if (newQuantity < 0) {
+    if (newQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
+
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: newQuantity }
-          : item,
-      ),
+      updateCartItemQuantity(prevCart, productId, newQuantity),
     );
   };
 
@@ -50,15 +39,8 @@ export const useCart = () => {
   };
 
   const calculateTotal = () => {
-    const totalBeforeDiscount = cart.reduce((acc, item) => {
-      return acc + item.product.price * item.quantity;
-    }, 0);
-    const totalAfterDiscount = selectedCoupon
-      ? selectedCoupon.discountType === "amount"
-        ? totalBeforeDiscount - selectedCoupon.discountValue
-        : totalBeforeDiscount * (1 - selectedCoupon.discountValue)
-      : totalBeforeDiscount;
-    const totalDiscount = totalBeforeDiscount - totalAfterDiscount;
+    const { totalBeforeDiscount, totalAfterDiscount, totalDiscount } =
+      calculateCartTotal(cart, selectedCoupon);
 
     return {
       totalBeforeDiscount,
