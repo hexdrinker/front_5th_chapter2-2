@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { describe, expect, test } from "vitest";
 import {
   act,
@@ -11,8 +11,13 @@ import {
 import { CartPage } from "../../refactoring/components/CartPage";
 import { AdminPage } from "../../refactoring/components/AdminPage";
 import { CartItem, Coupon, Product } from "../../types";
-import { useCart, useCoupons, useProducts } from "../../refactoring/hooks";
+import { useCart } from "../../refactoring/contexts/cart-context";
+import { useCoupons } from "../../refactoring/contexts/coupon-context";
+import { useProducts } from "../../refactoring/contexts/product-context";
 import * as cartUtils from "../../refactoring/models/cart";
+import { ProductProvider } from "../../refactoring/contexts/product-context";
+import { CartProvider } from "../../refactoring/contexts/cart-context";
+import { CouponProvider } from "../../refactoring/contexts/coupon-context";
 
 const mockProducts: Product[] = [
   {
@@ -58,7 +63,9 @@ const TestAdminPage = () => {
 
   const handleProductUpdate = (updatedProduct: Product) => {
     setProducts((prevProducts) =>
-      prevProducts.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      prevProducts.map((p) =>
+        p.id === updatedProduct.id ? updatedProduct : p,
+      ),
     );
   };
 
@@ -71,20 +78,28 @@ const TestAdminPage = () => {
   };
 
   return (
-    <AdminPage
-      products={products}
-      coupons={coupons}
-      onProductUpdate={handleProductUpdate}
-      onProductAdd={handleProductAdd}
-      onCouponAdd={handleCouponAdd}
-    />
+    <CartProvider>
+      <ProductProvider initialProducts={mockProducts}>
+        <CouponProvider initialCoupons={mockCoupons}>
+          <AdminPage />
+        </CouponProvider>
+      </ProductProvider>
+    </CartProvider>
   );
 };
 
 describe("basic > ", () => {
   describe("시나리오 테스트 > ", () => {
     test("장바구니 페이지 테스트 > ", async () => {
-      render(<CartPage products={mockProducts} coupons={mockCoupons} />);
+      render(
+        <CartProvider>
+          <ProductProvider initialProducts={mockProducts}>
+            <CouponProvider initialCoupons={mockCoupons}>
+              <CartPage />
+            </CouponProvider>
+          </ProductProvider>
+        </CartProvider>,
+      );
       const product1 = screen.getByTestId("product-p1");
       const product2 = screen.getByTestId("product-p2");
       const product3 = screen.getByTestId("product-p3");
@@ -228,24 +243,24 @@ describe("basic > ", () => {
       fireEvent.click(screen.getByText("할인 추가"));
 
       expect(
-        screen.queryByText("5개 이상 구매 시 5% 할인")
+        screen.queryByText("5개 이상 구매 시 5% 할인"),
       ).toBeInTheDocument();
 
       // 할인 삭제
       fireEvent.click(screen.getAllByText("삭제")[0]);
       expect(
-        screen.queryByText("10개 이상 구매 시 10% 할인")
+        screen.queryByText("10개 이상 구매 시 10% 할인"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByText("5개 이상 구매 시 5% 할인")
+        screen.queryByText("5개 이상 구매 시 5% 할인"),
       ).toBeInTheDocument();
 
       fireEvent.click(screen.getAllByText("삭제")[0]);
       expect(
-        screen.queryByText("10개 이상 구매 시 10% 할인")
+        screen.queryByText("10개 이상 구매 시 10% 할인"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByText("5개 이상 구매 시 5% 할인")
+        screen.queryByText("5개 이상 구매 시 5% 할인"),
       ).not.toBeInTheDocument();
 
       // 4. 쿠폰 추가
@@ -276,12 +291,28 @@ describe("basic > ", () => {
     ];
 
     test("특정 제품으로 초기화할 수 있다.", () => {
-      const { result } = renderHook(() => useProducts(initialProducts));
+      const { result } = renderHook(() => useProducts(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={initialProducts}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
       expect(result.current.products).toEqual(initialProducts);
     });
 
     test("제품을 업데이트할 수 있다.", () => {
-      const { result } = renderHook(() => useProducts(initialProducts));
+      const { result } = renderHook(() => useProducts(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={initialProducts}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
       const updatedProduct = { ...initialProducts[0], name: "Updated Product" };
 
       act(() => {
@@ -298,7 +329,15 @@ describe("basic > ", () => {
     });
 
     test("새로운 제품을 추가할 수 있다.", () => {
-      const { result } = renderHook(() => useProducts(initialProducts));
+      const { result } = renderHook(() => useProducts(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={initialProducts}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
       const newProduct: Product = {
         id: "2",
         name: "New Product",
@@ -318,12 +357,32 @@ describe("basic > ", () => {
 
   describe("useCoupons > ", () => {
     test("쿠폰을 초기화할 수 있다.", () => {
-      const { result } = renderHook(() => useCoupons(mockCoupons));
+      const { result } = renderHook(() => useCoupons(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={[]}>
+              <CouponProvider initialCoupons={mockCoupons}>
+                {children}
+              </CouponProvider>
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
       expect(result.current.coupons).toEqual(mockCoupons);
     });
 
     test("쿠폰을 추가할 수 있다", () => {
-      const { result } = renderHook(() => useCoupons(mockCoupons));
+      const { result } = renderHook(() => useCoupons(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={[]}>
+              <CouponProvider initialCoupons={mockCoupons}>
+                {children}
+              </CouponProvider>
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
       const newCoupon: Coupon = {
         name: "New Coupon",
         code: "NEWCODE",
@@ -455,7 +514,15 @@ describe("basic > ", () => {
     };
 
     test("장바구니에 제품을 추가해야 합니다", () => {
-      const { result } = renderHook(() => useCart());
+      const { result } = renderHook(() => useCart(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={[testProduct]}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
 
       act(() => {
         result.current.addToCart(testProduct);
@@ -469,7 +536,15 @@ describe("basic > ", () => {
     });
 
     test("장바구니에서 제품을 제거해야 합니다", () => {
-      const { result } = renderHook(() => useCart());
+      const { result } = renderHook(() => useCart(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={[testProduct]}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
 
       act(() => {
         result.current.addToCart(testProduct);
@@ -480,7 +555,15 @@ describe("basic > ", () => {
     });
 
     test("제품 수량을 업데이트해야 합니다", () => {
-      const { result } = renderHook(() => useCart());
+      const { result } = renderHook(() => useCart(), {
+        wrapper: ({ children }) => (
+          <CartProvider>
+            <ProductProvider initialProducts={[testProduct]}>
+              {children}
+            </ProductProvider>
+          </CartProvider>
+        ),
+      });
 
       act(() => {
         result.current.addToCart(testProduct);
@@ -491,7 +574,33 @@ describe("basic > ", () => {
     });
 
     test("쿠폰을 적용해야지", () => {
-      const { result } = renderHook(() => useCart());
+      const TestComponent = () => {
+        const coupon = useCoupons();
+
+        useEffect(() => {
+          const timer = setTimeout(() => {
+            coupon.applyCoupon(testCoupon);
+          }, 0);
+
+          return () => clearTimeout(timer);
+        }, []);
+
+        return null;
+      };
+
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <CartProvider>
+          <ProductProvider initialProducts={[testProduct]}>
+            <CouponProvider initialCoupons={[testCoupon]}>
+              {children}
+            </CouponProvider>
+          </ProductProvider>
+        </CartProvider>
+      );
+
+      render(<TestComponent />, { wrapper });
+
+      const { result } = renderHook(() => useCoupons(), { wrapper });
 
       act(() => {
         result.current.applyCoupon(testCoupon);
@@ -501,15 +610,32 @@ describe("basic > ", () => {
     });
 
     test("합계를 정확하게 계산해야 합니다", () => {
-      const { result } = renderHook(() => useCart());
+      const AllProviders = ({ children }: { children: React.ReactNode }) => (
+        <CartProvider>
+          <ProductProvider initialProducts={[testProduct]}>
+            <CouponProvider initialCoupons={[testCoupon]}>
+              {children}
+            </CouponProvider>
+          </ProductProvider>
+        </CartProvider>
+      );
 
-      act(() => {
-        result.current.addToCart(testProduct);
-        result.current.updateQuantity(testProduct.id, 2);
-        result.current.applyCoupon(testCoupon);
+      const { result: cartResult } = renderHook(() => useCart(), {
+        wrapper: AllProviders,
+      });
+      const { result: couponResult } = renderHook(() => useCoupons(), {
+        wrapper: AllProviders,
       });
 
-      const total = result.current.calculateTotal();
+      act(() => {
+        cartResult.current.addToCart(testProduct);
+        cartResult.current.updateQuantity(testProduct.id, 2);
+        couponResult.current.applyCoupon(testCoupon);
+      });
+
+      const total = cartResult.current.calculateTotal(
+        couponResult.current.selectedCoupon,
+      );
       expect(total.totalBeforeDiscount).toBe(200);
       expect(total.totalAfterDiscount).toBe(180);
       expect(total.totalDiscount).toBe(20);
