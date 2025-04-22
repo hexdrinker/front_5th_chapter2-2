@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Coupon, Discount, Product } from "../../types.ts";
 import { useProducts } from "../contexts/product-context.tsx";
 import { useCoupons } from "../contexts/coupon-context.tsx";
+import CouponItem from "./CouponItem.tsx";
 
 export const AdminPage = () => {
   const {
@@ -420,17 +421,11 @@ export const AdminPage = () => {
               <h3 className="text-lg font-semibold mb-2">현재 쿠폰 목록</h3>
               <div className="space-y-2">
                 {coupons.map((coupon, index) => (
-                  <div
+                  <CouponItem
                     key={index}
-                    data-testid={`coupon-${index + 1}`}
-                    className="bg-gray-100 p-2 rounded"
-                  >
-                    {coupon.name} ({coupon.code}):
-                    {coupon.discountType === "amount"
-                      ? `${coupon.discountValue}원`
-                      : `${coupon.discountValue}%`}{" "}
-                    할인
-                  </div>
+                    coupon={coupon}
+                    index={index}
+                  />
                 ))}
               </div>
             </div>
