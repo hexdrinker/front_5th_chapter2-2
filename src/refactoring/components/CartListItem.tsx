@@ -1,5 +1,5 @@
 import { CartItem } from "../../types";
-import { useCart } from "../contexts/cart-context";
+import { useCart } from "../hooks";
 
 interface CartListItemProps {
   item: CartItem;
@@ -23,10 +23,7 @@ const CartListItem = ({ item }: CartListItemProps) => {
   const appliedDiscount = getAppliedDiscount(item);
 
   return (
-    <div
-      key={item.product.id}
-      className="flex justify-between items-center bg-white p-3 rounded shadow"
-    >
+    <div className="flex justify-between items-center bg-white p-3 rounded shadow">
       <div>
         <span className="font-semibold">{item.product.name}</span>
         <br />

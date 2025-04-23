@@ -1,19 +1,20 @@
-import { useCart } from "../contexts/cart-context.tsx";
-import { useCoupons } from "../contexts/coupon-context.tsx";
-import { useProducts } from "../contexts/product-context.tsx";
+import { useCart, useCoupons, useProducts } from "../hooks";
+import useMembership from "../hooks/useMembership.ts";
 import CartListItem from "./CartListItem.tsx";
+import MembershipSelector from "./MembershipSelector.tsx";
 
 export const CartPage = () => {
   const { cart, addToCart, calculateTotal } = useCart();
   const { coupons, applyCoupon, selectedCoupon } = useCoupons();
   const { products, getRemainingStock } = useProducts();
+  const { selectedTier } = useMembership();
 
   const getMaxDiscount = (discounts: { quantity: number; rate: number }[]) => {
     return discounts.reduce((max, discount) => Math.max(max, discount.rate), 0);
   };
 
   const { totalBeforeDiscount, totalAfterDiscount, totalDiscount } =
-    calculateTotal(selectedCoupon);
+    calculateTotal(selectedCoupon, selectedTier);
 
   return (
     <div className="container mx-auto p-4">
@@ -83,7 +84,10 @@ export const CartPage = () => {
 
           <div className="space-y-2">
             {cart.map((item) => (
-              <CartListItem item={item} />
+              <CartListItem
+                key={item.product.id}
+                item={item}
+              />
             ))}
           </div>
 
@@ -129,6 +133,8 @@ export const CartPage = () => {
               </p>
             </div>
           </div>
+
+          <MembershipSelector />
         </div>
       </div>
     </div>

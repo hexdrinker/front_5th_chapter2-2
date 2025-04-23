@@ -1,4 +1,4 @@
-import { CartItem, Coupon } from "../../types";
+import { CartItem, Coupon, MembershipTier } from "../../types";
 
 export const calculateItemTotal = (item: CartItem) => {
   const maxApplicableDiscount = getMaxApplicableDiscount(item);
@@ -18,6 +18,7 @@ export const getMaxApplicableDiscount = (item: CartItem) => {
 export const calculateCartTotal = (
   cart: CartItem[],
   selectedCoupon: Coupon | null,
+  selectedTier: MembershipTier | null,
 ) => {
   let totalBeforeDiscount = 0;
   let totalAfterDiscount = 0;
@@ -40,6 +41,10 @@ export const calculateCartTotal = (
     } else {
       totalAfterDiscount *= 1 - selectedCoupon.discountValue / 100;
     }
+  }
+
+  if (selectedTier) {
+    totalAfterDiscount *= 1 - selectedTier.discountRate / 100;
   }
 
   const totalDiscount = totalBeforeDiscount - totalAfterDiscount;
