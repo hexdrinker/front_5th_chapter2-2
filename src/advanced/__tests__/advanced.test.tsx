@@ -3,9 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { CartPage } from "../../refactoring/components/CartPage";
 import { AdminPage } from "../../refactoring/components/AdminPage";
 import { Coupon, Product } from "../../types";
-import { CartProvider } from "../../refactoring/contexts/cart-context";
-import { ProductProvider } from "../../refactoring/contexts/product-context";
-import { CouponProvider } from "../../refactoring/contexts/coupon-context";
+import StoreProvider from "../../refactoring/store/StoreProvider";
 
 const mockProducts: Product[] = [
   {
@@ -47,13 +45,12 @@ const mockCoupons: Coupon[] = [
 
 const TestAdminPage = () => {
   return (
-    <CartProvider>
-      <ProductProvider initialProducts={mockProducts}>
-        <CouponProvider initialCoupons={mockCoupons}>
-          <AdminPage />
-        </CouponProvider>
-      </ProductProvider>
-    </CartProvider>
+    <StoreProvider
+      initialProducts={mockProducts}
+      initialCoupons={mockCoupons}
+    >
+      <AdminPage />
+    </StoreProvider>
   );
 };
 
@@ -61,13 +58,12 @@ describe("advanced > ", () => {
   describe("시나리오 테스트 > ", () => {
     test("장바구니 페이지 테스트 > ", async () => {
       render(
-        <CartProvider>
-          <ProductProvider initialProducts={mockProducts}>
-            <CouponProvider initialCoupons={mockCoupons}>
-              <CartPage />
-            </CouponProvider>
-          </ProductProvider>
-        </CartProvider>,
+        <StoreProvider
+          initialProducts={mockProducts}
+          initialCoupons={mockCoupons}
+        >
+          <CartPage />
+        </StoreProvider>,
       );
       const product1 = screen.getByTestId("product-p1");
       const product2 = screen.getByTestId("product-p2");

@@ -11,13 +11,12 @@ import {
 import { CartPage } from "../../refactoring/components/CartPage";
 import { AdminPage } from "../../refactoring/components/AdminPage";
 import { CartItem, Coupon, Product } from "../../types";
-import { useCart } from "../../refactoring/contexts/cart-context";
-import { useCoupons } from "../../refactoring/contexts/coupon-context";
-import { useProducts } from "../../refactoring/contexts/product-context";
+import { useCart, useCoupons, useProducts } from "../../refactoring/hooks";
 import * as cartUtils from "../../refactoring/models/cart";
-import { ProductProvider } from "../../refactoring/contexts/product-context";
-import { CartProvider } from "../../refactoring/contexts/cart-context";
-import { CouponProvider } from "../../refactoring/contexts/coupon-context";
+import StoreProvider from "../../refactoring/store/StoreProvider";
+// import { ProductProvider } from "../../refactoring/contexts/product-context";
+// import { CartProvider } from "../../refactoring/contexts/cart-context";
+// import { CouponProvider } from "../../refactoring/contexts/coupon-context";
 
 const mockProducts: Product[] = [
   {
@@ -58,33 +57,13 @@ const mockCoupons: Coupon[] = [
 ];
 
 const TestAdminPage = () => {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
-
-  const handleProductUpdate = (updatedProduct: Product) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((p) =>
-        p.id === updatedProduct.id ? updatedProduct : p,
-      ),
-    );
-  };
-
-  const handleProductAdd = (newProduct: Product) => {
-    setProducts((prevProducts) => [...prevProducts, newProduct]);
-  };
-
-  const handleCouponAdd = (newCoupon: Coupon) => {
-    setCoupons((prevCoupons) => [...prevCoupons, newCoupon]);
-  };
-
   return (
-    <CartProvider>
-      <ProductProvider initialProducts={mockProducts}>
-        <CouponProvider initialCoupons={mockCoupons}>
-          <AdminPage />
-        </CouponProvider>
-      </ProductProvider>
-    </CartProvider>
+    <StoreProvider
+      initialProducts={mockProducts}
+      initialCoupons={mockCoupons}
+    >
+      <AdminPage />
+    </StoreProvider>
   );
 };
 
@@ -92,13 +71,12 @@ describe("basic > ", () => {
   describe("시나리오 테스트 > ", () => {
     test("장바구니 페이지 테스트 > ", async () => {
       render(
-        <CartProvider>
-          <ProductProvider initialProducts={mockProducts}>
-            <CouponProvider initialCoupons={mockCoupons}>
-              <CartPage />
-            </CouponProvider>
-          </ProductProvider>
-        </CartProvider>,
+        <StoreProvider
+          initialProducts={mockProducts}
+          initialCoupons={mockCoupons}
+        >
+          <CartPage />
+        </StoreProvider>,
       );
       const product1 = screen.getByTestId("product-p1");
       const product2 = screen.getByTestId("product-p2");
@@ -293,11 +271,9 @@ describe("basic > ", () => {
     test("특정 제품으로 초기화할 수 있다.", () => {
       const { result } = renderHook(() => useProducts(), {
         wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={initialProducts}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
+          <StoreProvider initialProducts={initialProducts}>
+            {children}
+          </StoreProvider>
         ),
       });
       expect(result.current.products).toEqual(initialProducts);
@@ -306,11 +282,9 @@ describe("basic > ", () => {
     test("제품을 업데이트할 수 있다.", () => {
       const { result } = renderHook(() => useProducts(), {
         wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={initialProducts}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
+          <StoreProvider initialProducts={initialProducts}>
+            {children}
+          </StoreProvider>
         ),
       });
       const updatedProduct = { ...initialProducts[0], name: "Updated Product" };
@@ -331,11 +305,9 @@ describe("basic > ", () => {
     test("새로운 제품을 추가할 수 있다.", () => {
       const { result } = renderHook(() => useProducts(), {
         wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={initialProducts}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
+          <StoreProvider initialProducts={initialProducts}>
+            {children}
+          </StoreProvider>
         ),
       });
       const newProduct: Product = {
@@ -358,30 +330,14 @@ describe("basic > ", () => {
   describe("useCoupons > ", () => {
     test("쿠폰을 초기화할 수 있다.", () => {
       const { result } = renderHook(() => useCoupons(), {
-        wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={[]}>
-              <CouponProvider initialCoupons={mockCoupons}>
-                {children}
-              </CouponProvider>
-            </ProductProvider>
-          </CartProvider>
-        ),
+        wrapper: ({ children }) => <StoreProvider>{children}</StoreProvider>,
       });
       expect(result.current.coupons).toEqual(mockCoupons);
     });
 
     test("쿠폰을 추가할 수 있다", () => {
       const { result } = renderHook(() => useCoupons(), {
-        wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={[]}>
-              <CouponProvider initialCoupons={mockCoupons}>
-                {children}
-              </CouponProvider>
-            </ProductProvider>
-          </CartProvider>
-        ),
+        wrapper: ({ children }) => <StoreProvider>{children}</StoreProvider>,
       });
       const newCoupon: Coupon = {
         name: "New Coupon",
@@ -515,13 +471,7 @@ describe("basic > ", () => {
 
     test("장바구니에 제품을 추가해야 합니다", () => {
       const { result } = renderHook(() => useCart(), {
-        wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={[testProduct]}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
-        ),
+        wrapper: ({ children }) => <StoreProvider>{children}</StoreProvider>,
       });
 
       act(() => {
@@ -537,13 +487,7 @@ describe("basic > ", () => {
 
     test("장바구니에서 제품을 제거해야 합니다", () => {
       const { result } = renderHook(() => useCart(), {
-        wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={[testProduct]}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
-        ),
+        wrapper: ({ children }) => <StoreProvider>{children}</StoreProvider>,
       });
 
       act(() => {
@@ -556,13 +500,7 @@ describe("basic > ", () => {
 
     test("제품 수량을 업데이트해야 합니다", () => {
       const { result } = renderHook(() => useCart(), {
-        wrapper: ({ children }) => (
-          <CartProvider>
-            <ProductProvider initialProducts={[testProduct]}>
-              {children}
-            </ProductProvider>
-          </CartProvider>
-        ),
+        wrapper: ({ children }) => <StoreProvider>{children}</StoreProvider>,
       });
 
       act(() => {
@@ -589,13 +527,7 @@ describe("basic > ", () => {
       };
 
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <CartProvider>
-          <ProductProvider initialProducts={[testProduct]}>
-            <CouponProvider initialCoupons={[testCoupon]}>
-              {children}
-            </CouponProvider>
-          </ProductProvider>
-        </CartProvider>
+        <StoreProvider>{children}</StoreProvider>
       );
 
       render(<TestComponent />, { wrapper });
@@ -611,13 +543,7 @@ describe("basic > ", () => {
 
     test("합계를 정확하게 계산해야 합니다", () => {
       const AllProviders = ({ children }: { children: React.ReactNode }) => (
-        <CartProvider>
-          <ProductProvider initialProducts={[testProduct]}>
-            <CouponProvider initialCoupons={[testCoupon]}>
-              {children}
-            </CouponProvider>
-          </ProductProvider>
-        </CartProvider>
+        <StoreProvider>{children}</StoreProvider>
       );
 
       const { result: cartResult } = renderHook(() => useCart(), {
