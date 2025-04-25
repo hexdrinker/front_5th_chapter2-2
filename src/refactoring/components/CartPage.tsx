@@ -17,13 +17,11 @@ export const CartPage = () => {
 
   const { totalBeforeDiscount, defaultAfterDiscount } = calculateTotal()
 
-  console.log(totalBeforeDiscount, defaultAfterDiscount)
   const { totalAfterDiscount } = useDiscountCalculator({
     defaultAfterDiscount,
     selectedCoupon,
     selectedTier,
   })
-  console.log(totalAfterDiscount)
 
   const totalDiscount = useMemo(
     () => totalBeforeDiscount - totalAfterDiscount,
